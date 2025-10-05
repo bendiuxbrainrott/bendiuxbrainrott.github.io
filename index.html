@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Steal Brain Rot - Completo</title>
+<style>
+/* ---------------------------
+   STYLE (tu estilo solicitado)
+   --------------------------- */
+body {
+  margin:0;
+  padding:0;
+  background:url('stealfondo.png') no-repeat center center fixed;
+  background-size: cover;
+  font-family: Arial,sans-serif;
+  overflow:hidden;
+}
+
+/* Monedas */
+#monedas {
+  position:fixed; top:20px; right:20px;
+  font-size:32px; font-weight:bold; color:#ffff00;
+  text-shadow:0 0 10px #ffff00,0 0 20px #ffff00;
+  background: rgba(0,0,0,0.4); padding:10px 20px; border-radius:15px;
+  z-index:1000; transition: all 0.5s ease;
+}
+#monedas.animacion { transform: scale(1.3); box-shadow: 0 0 20px #ffff00; }
+
+/* Icono de música */
+#musica-icono { position:fixed; top:90px; right:30px; width:40px; height:40px; cursor:pointer; z-index:1000; filter: drop-shadow(2px 2px 4px black); }
+
+/* Personaje central */
+#personaje-container { position:absolute; top:30%; left:50%; transform:translate(-50%,-30%); text-align:center; width:420px; }
+#personaje-frame { width:220px; height:220px; margin:auto; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.3); border-radius:20px; overflow:hidden; }
+#personaje-img { max-width:100%; max-height:100%; opacity:0; transform:scale(0.85); transition:all 0.6s ease; }
+#personaje-img.mostrar { opacity:1; transform:scale(1); }
+
+/* Texto valor/producción */
+#valor-personaje { margin-top:8px; font-size:16px; font-weight:bold; color:#00ff00; }
+#produccion { margin-top:6px; font-size:16px; font-weight:bold; color:yellow; text-shadow:2px 2px 6px black; }
+
+/* Botones */
+.boton-comprar, .boton-robar, .boton-bloqueo {
+  margin-top:8px; cursor:pointer; padding:10px 16px; font-size:16px; font-weight:bold;
+  color:white; background: linear-gradient(135deg,#ff6a00,#ffb347); border:none; border-radius:15px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4); transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.boton-comprar:hover, .boton-robar:hover, .boton-bloqueo:hover { transform:scale(1.06); box-shadow:0 6px 18px rgba(0,0,0,0.6); }
+
+/* Mensaje inferior */
+#mensaje { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background: rgba(0,0,0,0.7); color:white; padding:8px 16px; border-radius:10px; display:none; font-size:16px; min-width:180px; text-align:center; z-index:1500; }
+
+/* Panel base */
+#base-btn { position:fixed; bottom:20px; left:20px; padding:10px 14px; font-size:14px; font-weight:bold; color:white; background: linear-gradient(135deg,#00c6ff,#0072ff); border:none; border-radius:15px; box-shadow:0 4px 12px rgba(0,0,0,0.4); cursor:pointer; z-index:1000; }
+#panel-base { position:fixed; bottom:70px; left:20px; width:80%; max-width:420px; max-height:520px; overflow-y:auto; background: rgba(0,0,0,0.85); color:white; border-radius:15px; padding:12px; display:none; z-index:999; }
+#panel-base h2 { margin-top:0; text-align:center; color:#ffd700; }
+#contador-bloqueo { color:red; font-weight:bold; text-align:center; margin-top:5px; }
+
+/* Personaje-item (Mi Base) */
+.personaje-item { display:flex; align-items:center; justify-content:space-between; margin:6px 0; width:100%; border-bottom:1px solid rgba(255,255,255,0.12); padding:6px; }
+.personaje-item img { width:50px; height:50px; object-fit:contain; cursor:pointer; border-radius:8px; }
+
+/* Personajes exclusivos dentro de la base */
+#personajes-exclusivos { margin-top:10px; border-top:1px dashed rgba(255,255,255,0.08); padding-top:8px; }
+
+/* Comprar plazas */
+#comprar-plazas { margin-top:10px; padding:8px; background:#28a745; color:white; font-weight:bold; border:none; border-radius:10px; cursor:pointer; width:100%; text-align:center; }
+
+/* Bases exteriores */
+.bases-exteriores { position:fixed; left:10px; display:flex; flex-direction:column; gap:10px; top:150px; z-index:1000; }
+.bases-exteriores button { padding:12px; background:#b71c1c; color:white; font-weight:bold; font-size:14px; border:none; border-radius:10px; cursor:pointer; width:100px; }
+
+/* Panel externa */
+#panel-externa { position:fixed; top:50px; right:20px; width:260px; max-height:420px; overflow-y:auto; background: rgba(0,0,0,0.8); color:white; border-radius:15px; padding:12px; display:none; z-index:1000; }
+#panel-externa h3 { text-align:center; color:#ffd700; margin-top:0; }
+.personaje-externa { display:flex; align-items:center; justify-content:space-between; margin:6px 0; border-bottom:1px solid rgba(255,255,255,0.08); padding:6px; }
+.personaje-externa img { width:40px; height:40px; object-fit:contain; }
+
+/* Botón cerrar externa */
+#x-cerrar-externa { position:fixed; bottom:10px; right:10px; display:none; z-index:2000; padding:8px 10px; border-radius:8px; background:#333; color:white; border:none; cursor:pointer; }
+
+/* Exclusividades */
+#exclusividades-btn { position: fixed; bottom:20px; right:20px; padding:12px 18px; font-size:16px; font-weight:bold; color:white; background: linear-gradient(45deg, #ff00ff,#ff69b4,#00ffff,#00ff00); background-size: 400% 400%; border:none; border-radius:15px; cursor:pointer; z-index:1000; animation: colores 4s ease infinite; box-shadow:0 4px 12px rgba(0,0,0,0.5); }
+@keyframes colores { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+#panel-exclusivas { position:fixed; top:50px; right:50%; transform:translateX(50%); width:340px; max-height:520px; background: rgba(0,0,0,0.9); color:white; border-radius:15px; padding:12px; display:none; overflow-y:auto; z-index:2000; }
+#panel-exclusivas h3 { text-align:center; color:#ffd700; margin-top:0; }
+.exclusiva-item { display:flex; align-items:center; justify-content:space-between; margin:6px 0; padding:6px; border-bottom:1px solid rgba(255,255,255,0.08); }
+.exclusiva-item img { width:60px; height:60px; object-fit:contain; border-radius:8px; }
+
+/* Canje dentro exclusividades */
+#canje-bloque { display:flex; justify-content:center; gap:8px; margin-top:10px; align-items:center; }
+#canje-bloque input { padding:8px; border-radius:6px; border:1px solid #ccc; width:60%; background:#fff; color:#000; }
+#canje-bloque button { padding:8px 12px; border-radius:6px; border:none; background:#ff69b4; color:white; cursor:pointer; }
+
+/* Carrousel skins (en medio) */
+#skins-carousel { width:420px; margin: 18px auto 0; text-align:center; display:flex; align-items:center; justify-content:center; gap:12px; z-index:1200; }
+#skins-carousel .nav { cursor:pointer; font-size:22px; color:#fff; user-select:none; padding:6px; border-radius:8px; background:rgba(0,0,0,0.3); }
+#skins-carousel .skin-view { width:240px; height:140px; display:flex; align-items:center; justify-content:center; flex-direction:column; background: rgba(0,0,0,0.25); border-radius:12px; padding:8px; }
+#skins-carousel .skin-view img { max-width:100%; max-height:80px; transition: filter 0.3s, transform 0.25s; border-radius:8px; }
+#skins-carousel .skin-name { margin-top:6px; color:#fff; font-weight:bold; }
+
+/* Evento fondo (oculto por defecto) */
+#fondo-evento { position:fixed; top:0; left:0; width:100%; height:100%; background: url('eventofondo.png') no-repeat center center fixed; background-size: cover; z-index:2500; display:none; }
+
+/* Contador evento (aparece sobre el fondo) */
+#contador-evento { position:fixed; top:14px; left:50%; transform:translateX(-50%); font-size:20px; color:#ff0; z-index:2600; text-shadow:0 0 10px #ff69b4; }
+
+/* Personaje grande modal */
+#personaje-grande { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:480px; height:480px; display:none; z-index:3000; border-radius:14px; background: rgba(0,0,0,0.85); padding:12px; align-items:center; justify-content:center; flex-direction:column; }
+#personaje-grande img { max-width:100%; max-height:100%; }
+#cerrar-personaje-grande { position:absolute; top:8px; right:12px; font-size:20px; color:#ff5252; cursor:pointer; }
+
+/* Responsive */
+@media(max-width:800px){
+  #personaje-container { left:50%; top:20%; transform:translate(-50%,-20%); width:95%; }
+  #skins-carousel { width:95%; flex-direction:column; }
+  #panel-base, #panel-exclusivas { width:92%; left:4%; transform:none; right:auto; }
+}
+</style>
+</head>
+<body>
+  <!-- Contador de monedas -->
+  <div id="monedas">0</div>
+
+  <!-- Icono de música -->
+  <img id="musica-icono" src="musica_off.png" alt="Música" title="Activar/Desactivar música">
+
+  <!-- Personaje central -->
+  <div id="personaje-container">
+    <div id="personaje-frame">
+      <img id="personaje-img" src="" alt="Personaje">
+    </div>
+    <div id="valor-personaje">Valor: 0</div>
+    <div id="produccion">+0/seg</div>
+    <button id="comprar-btn" class="boton-comprar">Comprar</button>
+
+    <!-- skins carousel -->
+    <div id="skins-carousel" aria-hidden="false">
+      <div class="nav" id="skins-prev" title="Anterior">◀</div>
+      <div class="skin-view" id="skins-view">
+        <img id="skin-img" src="" alt="Skin">
+        <div class="skin-name" id="skin-name">-</div>
+        <button id="skin-buy" class="boton-comprar" style="margin-top:8px;">Comprar skin</button>
+      </div>
+      <div class="nav" id="skins-next" title="Siguiente">▶</div>
+    </div>
+  </div>
+
+  <!-- Panel base -->
+  <button id="base-btn">Mi Base</button>
+  <div id="panel-base">
+    <h2>Mi Base</h2>
+    <div id="contador-bloqueo"></div>
+    <div id="lista-personajes"></div>
+
+    <!-- Personajes exclusivos dentro de la base -->
+    <div id="personajes-exclusivos">
+      <h4 style="margin:6px 0;color:#ffd700;">Personajes exclusivos</h4>
+      <div id="lista-exclusivos-en-base"></div>
+    </div>
+
+    <button id="comprar-plazas">Comprar 10 plazas (500.000)</button>
+    <button id="bloqueo-btn" class="boton-bloqueo">Bloquear Base</button>
+  </div>
+
+  <!-- Bases exteriores -->
+  <div class="bases-exteriores">
+    <button data-index="0">Base 1</button>
+    <button data-index="1">Base 2</button>
+    <button data-index="2">Base 3</button>
+  </div>
+
+  <!-- Panel externa -->
+  <div id="panel-externa">
+    <h3>Base Externa</h3>
+    <div id="lista-externa"></div>
+  </div>
+  <button id="x-cerrar-externa" type="button">Cerrar Base</button>
+
+  <!-- Exclusividades -->
+  <button id="exclusividades-btn">Exclusividades</button>
+  <div id="panel-exclusivas">
+    <h3>Exclusividades</h3>
+    <div id="lista-exclusivas"></div>
+
+    <div id="canje-bloque">
+      <input id="codigo-input" placeholder="Introduce código" />
+      <button id="canjear-btn" type="button">Canjear</button>
+    </div>
+  </div>
+
+  <!-- Fondo evento y contador -->
+  <div id="fondo-evento"></div>
+  <div id="contador-evento" style="display:none;"></div>
+
+  <!-- Personaje grande modal -->
+  <div id="personaje-grande">
+    <div id="cerrar-personaje-grande">X</div>
+    <img id="personaje-grande-img" src="" alt="Personaje grande">
+  </div>
+
+  <!-- Mensaje -->
+  <div id="mensaje"></div>
+
+  <!-- Sonidos -->
+  <audio id="musica" src="musica.mp3" loop preload="auto"></audio>
+  <audio id="sonido-compra" src="compra.mp3" preload="auto"></audio>
+  <audio id="sonido-comprafallida" src="fallo.mp3" preload="auto"></audio>
+  <audio id="sonido-cerrada" src="cerrada.mp3" preload="auto"></audio>
+
+<script>
+/* --------------------------
+   JS: Juego completo
+   -------------------------- */
+document.addEventListener('DOMContentLoaded', () => {
+
+  // --- DOM referencias ---
+  const elMonedas = document.getElementById('monedas');
+  const musicaIcono = document.getElementById('musica-icono');
+  const personajeImg = document.getElementById('personaje-img');
+  const valorPersonaje = document.getElementById('valor-personaje');
+  const produccionPersonaje = document.getElementById('produccion');
+  const comprarBtn = document.getElementById('comprar-btn');
+
+  const baseBtn = document.getElementById('base-btn');
+  const panelBase = document.getElementById('panel-base');
+  const listaPersonajes = document.getElementById('lista-personajes');
+  const listaExclusivosEnBase = document.getElementById('lista-exclusivos-en-base');
+  const comprarPlazasBtn = document.getElementById('comprar-plazas');
+  const bloqueoBtn = document.getElementById('bloqueo-btn');
+  const contadorBloqueo = document.getElementById('contador-bloqueo');
+
+  const basesBtns = document.querySelectorAll('.bases-exteriores button');
+  const panelExterna = document.getElementById('panel-externa');
+  const listaExterna = document.getElementById('lista-externa');
+  const xCerrarExterna = document.getElementById('x-cerrar-externa');
+
+  const exclusividadesBtn = document.getElementById('exclusividades-btn');
+  const panelExclusivas = document.getElementById('panel-exclusivas');
+  const listaExclusivas = document.getElementById('lista-exclusivas');
+
+  const codigoInput = document.getElementById('codigo-input');
+  const canjearBtn = document.getElementById('canjear-btn');
+
+  const fondoEvento = document.getElementById('fondo-evento');
+  const contadorEvento = document.getElementById('contador-evento');
+
+  const skinsPrev = document.getElementById('skins-prev');
+  const skinsNext = document.getElementById('skins-next');
+  const skinImg = document.getElementById('skin-img');
+  const skinName = document.getElementById('skin-name');
+  const skinBuyBtn = document.getElementById('skin-buy');
+
+  const personajeGrandeModal = document.getElementById('personaje-grande');
+  const personajeGrandeImg = document.getElementById('personaje-grande-img');
+  const cerrarPersonajeGrande = document.getElementById('cerrar-personaje-grande');
+
+  // audios
+  const audioMusica = document.getElementById('musica');
+  const audioCompra = document.getElementById('sonido-compra');
+  const audioFallo = document.getElementById('sonido-comprafallida');
+  const audioCerrada = document.getElementById('sonido-cerrada');
+
+  // --- Datos y estado ---
+  const STORAGE_KEY = 'steal_v2_state_v1';
+
+  // Personajes básicos y nuevos (incluye los que pediste)
+  const personajes = {
+    "personaje1": { precio:300000, produccion:100 },
+    "personaje2": { precio:200, produccion:10 },
+    "personaje3": { precio:700000, produccion:900 },
+    "personaje4": { precio:720000, produccion:950 },
+    "personaje5": { precio:900000, produccion:1200 },
+    "personaje6": { precio:1200000, produccion:2000 },
+    "personaje7": { precio:400000, produccion:400 },
+    "personaje8": { precio:2000000, produccion:20000 },
+    "personaje9": { precio:20000000, produccion:100000 },
+    "personaje10": { precio:70000000, produccion:400000 },
+    "personaje11": { precio:20000, produccion:300 },
+    "personaje12": { precio:30000000, produccion:1000000 },
+    "personaje13": { precio:100000000, produccion:10000000 },
+    "personaje14": { precio:500000000, produccion:40000000 },
+    "personaje15": { precio:5000000, produccion:500000 },
+    "personaje19": { precio:700000, produccion:400000 },
+    "personaje20": { precio:900000000, produccion:30000000 },
+    "personaje21": { precio:10000, produccion:3000 },
+    "personaje22": { precio:5000, produccion:1000 },
+    "personaje23": { precio:2000000000, produccion:900000000, probabilidad:0.1 },
+    "personaje26": { precio:900000, produccion:200000 },
+    "personaje27": { precio:1000000, produccion:700000, startDate:new Date('2025-10-01') },
+    "personaje30": { precio:0, produccion:100000000000 }, // solo por canje
+    // nuevos que me pediste:
+    "personaje28": { precio:"todo", produccion:10000000000 },
+    "personaje29": { precio:5000, produccion:100 },
+    // personaje31: precio gigante (lo mostramos pero no permitimos compra normal)
+    "personaje31": { precioStr: "1979137469846789412679452794257941255241794512741257912451247895412473514795147891452741572415497812541941589145891421457941254274215789124542789524", produccion:12348768426864 },
+    "personaje32": { precio:100000000000, produccion:8282737 },
+    "personaje33": { precio:1000000, produccion:100000 }, // se desbloquea por código
+    "personaje36": { precio:"todo-minimo", minimo:18973186367, produccionEspecial:true },
+    "personaje38": { precio:100000000000000, produccion:1937736739739 }
+  };
+
+  // Exclusivas (se muestran en panel exclusivas)
+  const exclusivas = [
+    { nombre:"personaje16", precio:2000000000, produccion:500000000, horas:19, diasCada:2, comprado:false },
+    { nombre:"personaje17", precio:20000000000, produccion:5000000000, horas:15, diasCada:3, comprado:false },
+    { nombre:"personaje18", precio:200000000000, produccion:150000000000, horas:21, diasCada:7, comprado:false },
+    { nombre:"personaje24", precio:400000000000, produccion:200000000000, horas:12, diasCada:7, comprado:false },
+    { nombre:"personaje25", precio:100000000000000, produccion:20000000000, horas:14, diasCada:21, comprado:false }
+  ];
+
+  // Códigos válidos: evento + otros
+  const codigosValidos = [
+    "EVENTOYINYANG1234567890", // activa evento
+    "REGALO1000ABCDEFG", // ejemplo: da 1.000.000 y desbloquea personaje33
+    "OTROBONO0001" // otro bono si quieres
+  ];
+
+  // Bases externas (iniciales)
+  let basesExternas = [
+    { nombre:"Base 1", abierta:true, contador:0, personajes:[] },
+    { nombre:"Base 2", abierta:true, contador:0, personajes:[] },
+    { nombre:"Base 3", abierta:true, contador:0, personajes:[] }
+  ];
+
+  // Estado persistido
+  let state = {
+    monedas: 10000,
+    personajesComprados: [],       // array of ids
+    plazas: 20,
+    produccionTotal: 0,
+    exclusivasCompradas: [],       // exclusivas compradas
+    skinsNeon: {},                 // { personajeId: true } => comprado durante evento
+    ultimaActividad: Date.now()
+  };
+
+  // Helper: Guardar / Cargar
+  function guardarState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch(e) { console.warn('No se pudo guardar state', e); }
+  }
+  function cargarState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        state = Object.assign(state, parsed);
+      }
+    } catch(e){ console.warn('Error cargando state', e); }
+  }
+
+  // Inicializar
+  cargarState();
+
+  // --- UTIL --- 
+  function mostrarMensaje(texto, ms=2800){
+    const msg = document.getElementById('mensaje');
+    msg.textContent = texto;
+    msg.style.display = 'block';
+    setTimeout(()=> msg.style.display='none', ms);
+  }
+
+  function actualizarMonedasDOM(){
+    elMonedas.textContent = Number(state.monedas).toLocaleString();
+    elMonedas.classList.add('animacion');
+    setTimeout(()=> elMonedas.classList.remove('animacion'), 500);
+  }
+
+  // calcular produccionTotal a partir de personajes comprados
+  function recalcularProduccion(){
+    let total = 0;
+    state.personajesComprados.forEach(id=>{
+      if(personajes[id] && personajes[id].produccion) total += Number(personajes[id].produccion || 0);
+    });
+    // tambien sumar exclusivas compradas
+    state.exclusivasCompradas.forEach(id=>{
+      const ex = exclusivas.find(e=>e.nombre===id);
+      if(ex) total += Number(ex.produccion || 0);
+    });
+    state.produccionTotal = total;
+  }
+
+  // --- Mostrar panel Mi Base (lista) ---
+  function actualizarPanelBase(){
+    // Lista "tus personajes"
+    listaPersonajes.innerHTML = '';
+    state.personajesComprados.forEach(id=>{
+      const div = document.createElement('div');
+      div.className = 'personaje-item';
+      const img = document.createElement('img');
+      img.src = `${id}.png`;
+      img.alt = id;
+      img.title = id;
+      // click para mostrar grande
+      img.addEventListener('click', ()=> {
+        personajeGrandeImg.src = img.src;
+        personajeGrandeModal.style.display = 'flex';
+      });
+      const span = document.createElement('div');
+      span.textContent = id;
+      div.appendChild(img);
+      div.appendChild(span);
+      listaPersonajes.appendChild(div);
+    });
+
+    // Lista "exclusivos en base"
+    listaExclusivosEnBase.innerHTML = '';
+    state.exclusivasCompradas.forEach(id=>{
+      const div = document.createElement('div');
+      div.className = 'personaje-item';
+      const img = document.createElement('img');
+      img.src = `${id}.png`;
+      img.alt = id;
+      img.title = id;
+      // neon permanente si fue comprado en evento
+      if(state.skinsNeon[id]) img.style.filter = 'grayscale(0%) drop-shadow(0 0 12px #0ff)';
+      img.addEventListener('click', ()=> {
+        personajeGrandeImg.src = img.src;
+        personajeGrandeModal.style.display = 'flex';
+      });
+      const span = document.createElement('div');
+      span.textContent = id + ' (excl.)';
+      div.appendChild(img);
+      div.appendChild(span);
+      listaExclusivosEnBase.appendChild(div);
+    });
+  }
+
+  // --- Cambio de personaje central aleatorio (cada 5s) ---
+  let personajeActual = null;
+  function cambiarPersonajeAleatorio(){
+    const keys = Object.keys(personajes);
+    if(keys.length===0) return;
+    let nuevo;
+    do { nuevo = keys[Math.floor(Math.random()*keys.length)]; } while(nuevo===personajeActual && keys.length>1);
+    personajeActual = nuevo;
+    personajeImg.classList.remove('mostrar');
+    setTimeout(()=>{
+      personajeImg.src = `${personajeActual}.png`;
+      personajeImg.classList.add('mostrar');
+      // valor
+      const data = personajes[personajeActual];
+      if(data.precio === 'todo') valorPersonaje.textContent = 'Valor: TODO tu dinero';
+      else if(data.precio === 'todo-minimo') valorPersonaje.textContent = `Valor: Todo tu dinero (mínimo ${Number(data.minimo).toLocaleString()})`;
+      else if(data.precioStr) valorPersonaje.textContent = `Valor: ${data.precioStr} (precio enorme)`;
+      else valorPersonaje.textContent = `Valor: ${Number(data.precio||0).toLocaleString()} monedas`;
+      if(data.produccionEspecial) produccionPersonaje.textContent = `Producción: Infinita por 10s ⚡`;
+      else produccionPersonaje.textContent = `+${Number(data.produccion||0).toLocaleString()}/seg`;
+    },120);
+  }
+  cambiarPersonajeAleatorio();
+  setInterval(cambiarPersonajeAleatorio,5000);
+
+  // --- Comprar botón central ---
+  comprarBtn.addEventListener('click', ()=>{
+    if(!personajeActual) return;
+    const data = personajes[personajeActual];
+
+    // caso "todo": consume todo tu dinero
+    if(data.precio === 'todo'){
+      if(state.personajesComprados.length >= state.plazas){ mostrarMensaje('No hay huecos ⚠️'); audioFallo.play().catch(()=>{}); return; }
+      if(state.monedas > 0){
+        state.personajesComprados.push(personajeActual);
+        state.produccionTotal += Number(data.produccion || 0);
+        // marcar neon si evento activo
+        if(eventoActivo) state.skinsNeon[personajeActual]=true;
+        state.monedas = 0;
+        actualizarMonedasDOM();
+        recalcularProduccion();
+        actualizarPanelBase();
+        guardarState();
+        mostrarMensaje('¡Comprado con TODO tu dinero! ✅');
+        audioCompra.play().catch(()=>{});
+      } else { mostrarMensaje('No puedes comprar ❌'); audioFallo.play().catch(()=>{}); }
+      return;
+    }
+
+    // caso "todo-minimo"
+    if(data.precio === 'todo-minimo'){
+      if(state.monedas >= data.minimo){
+        state.monedas = 0;
+        // darle producción por 10s
+        const boost = 9999999999;
+        state.produccionTotal += boost;
+        actualizarMonedasDOM();
+        mostrarMensaje('¡Poder infinito por 10s! ⚡');
+        audioCompra.play().catch(()=>{});
+        setTimeout(()=>{ state.produccionTotal -= boost; mostrarMensaje('Se acabó el poder infinito ⏳'); guardarState(); }, 10000);
+        guardarState();
+      } else { mostrarMensaje('No tienes el mínimo requerido ❌'); audioFallo.play().catch(()=>{}); }
+      return;
+    }
+
+    // caso precioStr (precio gigante no comprable por monedas normales)
+    if(data.precioStr){
+      mostrarMensaje('Este personaje tiene un precio especial imposible de pagar (solo canje o admin).');
+      return;
+    }
+
+    // compra normal
+    const precio = Number(data.precio || 0);
+    if(state.personajesComprados.length >= state.plazas){ mostrarMensaje('No hay huecos ⚠️'); audioFallo.play().catch(()=>{}); return; }
+    if(state.monedas >= precio){
+      state.monedas -= precio;
+      state.personajesComprados.push(personajeActual);
+      recalcularProduccion();
+      actualizarMonedasDOM();
+      actualizarPanelBase();
+      guardarState();
+      mostrarMensaje('¡Comprado! ✅');
+      audioCompra.play().catch(()=>{});
+      // si evento activo, aplicar neon permanente para ese skin
+      if(eventoActivo) state.skinsNeon[personajeActual]=true;
+    } else {
+      mostrarMensaje('No tienes suficientes monedas ❌');
+      audioFallo.play().catch(()=>{});
+    }
+  });
+
+  // --- Producción automática cada segundo ---
+  setInterval(()=>{
+    if(Number(state.produccionTotal) > 0){
+      state.monedas += Number(state.produccionTotal);
+      actualizarMonedasDOM();
+    }
+    // guardamos periódicamente (cada 5s)
+    const now = Date.now();
+    if(now - state.ultimaActividad > 5000) { guardarState(); state.ultimaActividad = now; }
+  },1000);
+
+  // --- Abrir / cerrar Mi Base ---
+  baseBtn.addEventListener('click', ()=> {
+    panelBase.style.display = (panelBase.style.display === 'block') ? 'none' : 'block';
+    actualizarPanelBase();
+  });
+
+  // --- Comprar plazas ---
+  comprarPlazasBtn.addEventListener('click', ()=>{
+    const precioPlazas = 500000;
+    const cantidad = 10;
+    if(state.monedas >= precioPlazas){
+      state.monedas -= precioPlazas;
+      state.plazas += cantidad;
+      actualizarMonedasDOM();
+      guardarState();
+      mostrarMensaje(`¡Compraste ${cantidad} plazas! ✅`);
+      audioCompra.play().catch(()=>{});
+    } else { mostrarMensaje('No tienes monedas suficientes ❌'); audioFallo.play().catch(()=>{}); }
+  });
+
+  // --- Bloqueo de base ---
+  let bloqueoTimer = null;
+  bloqueoBtn.addEventListener('click', ()=>{
+    if(bloqueoTimer) return mostrarMensaje('La base ya está bloqueada');
+    bloqueoBtn.disabled = true;
+    estadoBloqueo( true );
+    let t = 60;
+    contadorBloqueo.textContent = `Base cerrada: ${t}s`;
+    audioCerrada.play().catch(()=>{});
+    bloqueoTimer = setInterval(()=>{
+      t--;
+      contadorBloqueo.textContent = `Base cerrada: ${t}s`;
+      if(t<=0){
+        clearInterval(bloqueoTimer);
+        bloqueoTimer = null;
+        estadoBloqueo( false );
+        contadorBloqueo.textContent = '';
+        bloqueoBtn.disabled = false;
+        mostrarMensaje('Bloqueo terminado');
+      }
+    },1000);
+  });
+  function estadoBloqueo(on){
+    bloqueoActivo = on;
+  }
+
+  // --- Bases externas: abrir panel ---
+  basesBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = Number(btn.getAttribute('data-index'));
+      abrirPanelExterna(idx);
+    });
+  });
+
+  function abrirPanelExterna(index){
+    const base = basesExternas[index];
+    panelExterna.style.display = 'block';
+    xCerrarExterna.style.display = 'block';
+    listaExterna.innerHTML = '';
+    const estado = base.abierta ? 'Abierta' : `Cerrada (${base.contador}s)`;
+    panelExterna.querySelector('h3').textContent = `${base.nombre} - ${estado}`;
+
+    // mostrar varios personajes (vienen de base.personajes)
+    base.personajes.forEach((p, idx)=>{
+      const div = document.createElement('div');
+      div.className = 'personaje-externa';
+      const img = document.createElement('img'); img.src = `${p}.png`; img.alt = p;
+      const btn = document.createElement('button'); btn.className='boton-robar'; btn.textContent = 'Robar';
+      btn.disabled = !base.abierta || eventoActivo || false; // si base cerrada o evento activo?
+      btn.addEventListener('click', ()=> iniciarRoboExterno(base, idx));
+      div.appendChild(img); div.appendChild(btn);
+      listaExterna.appendChild(div);
+    });
+  }
+
+  xCerrarExterna.addEventListener('click', ()=>{
+    panelExterna.style.display = 'none';
+    xCerrarExterna.style.display = 'none';
+  });
+
+  // --- Simulación progresiva de personajes en bases externas ---
+  setInterval(()=>{
+    basesExternas.forEach(base=>{
+      // si contador > 0 decrementamos, si llega a 0 determinar apertura y reset contador
+      if(base.contador > 0) { base.contador--; }
+      else {
+        base.abierta = Math.random() < 0.6; // 60% chance open
+        base.contador = Math.floor(Math.random()*30 + 10);
+      }
+      // añadir de 0 a 2 nuevos personajes cada tick si hay menos de 15
+      if(base.personajes.length < 15){
+        const keys = Object.keys(personajes);
+        const toAdd = Math.random() < 0.6 ? Math.floor(Math.random()*2)+1 : 0; // a veces 0
+        for(let i=0;i<toAdd && base.personajes.length<15;i++){
+          const p = keys[Math.floor(Math.random()*keys.length)];
+          if(p !== 'personaje30') base.personajes.push(p);
+        }
+      }
+    });
+  }, 2000); // cada 2s
+
+  // --- Robo externo ---
+  let roboActivoLocal = false;
+  function iniciarRoboExterno(base, idx){
+    if(roboActivoLocal) return;
+    roboActivoLocal = true;
+    mostrarMensaje('Intentando robar... ⏳');
+    let t = 8;
+    const interval = setInterval(()=>{
+      t--;
+      if(t<=0){
+        clearInterval(interval);
+        const p = base.personajes[idx];
+        // valor de personaje (si big no considera)
+        const valor = personajes[p] && personajes[p].precio ? Number(personajes[p].precio) : 0;
+        const chance = Math.min(0.95, 0.5 + valor/100000000);
+        if(Math.random() > chance){
+          // exito
+          if(!state.personajesComprados.includes(p)) state.personajesComprados.push(p);
+          recalcularProduccion();
+          actualizarPanelBase();
+          guardarState();
+          mostrarMensaje('¡Robo exitoso! ✅');
+          audioCompra.play().catch(()=>{});
+        } else {
+          mostrarMensaje('Robo fallido ❌');
+          audioFallo.play().catch(()=>{});
+        }
+        roboActivoLocal = false;
+      }
+    },1000);
+  }
+
+  // --- Exclusividades panel ---
+  function calcularProximaFecha(ex){
+    const ahora = new Date();
+    let f = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), ex.horas, 0, 0);
+    while(f < ahora) f.setDate(f.getDate() + (ex.diasCada || 1));
+    return f;
+  }
+
+  function actualizarPanelExclusivas(){
+    listaExclusivas.innerHTML = '';
+    const ahora = new Date();
+    exclusivas.forEach(ex=>{
+      if(!ex.proximaSalida) ex.proximaSalida = calcularProximaFecha(ex);
+      const div = document.createElement('div'); div.className='exclusiva-item';
+      const img = document.createElement('img'); img.src = `${ex.nombre}.png`; img.alt = ex.nombre;
+      const info = document.createElement('div'); info.style.flex='1'; info.style.margin='0 8px';
+      const title = document.createElement('div'); title.textContent = ex.nombre;
+      const timer = document.createElement('div'); timer.className='exclusiva-timer';
+      if(ahora >= ex.proximaSalida && !ex.comprado){
+        timer.textContent = 'Disponible!';
+        const btn = document.createElement('button'); btn.className='boton-comprar'; btn.textContent='Comprar';
+        btn.addEventListener('click', ()=>{
+          if(state.monedas >= ex.precio){
+            state.monedas -= ex.precio;
+            state.exclusivasCompradas.push(ex.nombre);
+            ex.comprado = true;
+            recalcularProduccion();
+            guardarState();
+            actualizarMonedasDOM();
+            actualizarPanelBase();
+            actualizarPanelExclusivas();
+            mostrarMensaje('¡Comprado exclusivo! ✅');
+            audioCompra.play().catch(()=>{});
+          } else {
+            mostrarMensaje('No tienes suficientes monedas ❌');
+            audioFallo.play().catch(()=>{});
+          }
+        });
+        div.appendChild(img); info.appendChild(title); info.appendChild(timer); div.appendChild(info); div.appendChild(btn);
+      } else {
+        const diff = Math.floor((ex.proximaSalida - ahora)/1000);
+        const h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60), s = diff%60;
+        timer.textContent = `${h}h ${m}m ${s}s`;
+        div.appendChild(img); info.appendChild(title); info.appendChild(timer); div.appendChild(info);
+      }
+      listaExclusivas.appendChild(div);
+    });
+
+    // canje block stays single (already present in DOM)
+  }
+
+  exclusividadesBtn.addEventListener('click', ()=>{
+    panelExclusivas.style.display = (panelExclusivas.style.display === 'block') ? 'none' : 'block';
+    actualizarPanelExclusivas();
+  });
+
+  // --- Canjear codigo (arreglado: no cierra, button type button) ---
+  let eventoActivo = false;
+  canjearBtn.addEventListener('click', ()=>{
+    const codigo = codigoInput.value.trim();
+    if(!codigo){ mostrarMensaje('Introduce un código ❌'); return; }
+    if(!codigosValidos.includes(codigo)){ mostrarMensaje('Código inválido ❌'); audioFallo.play().catch(()=>{}); return; }
+
+    mostrarMensaje('Código válido ✅');
+    // evento
+    if(codigo === 'EVENTOYINYANG1234567890'){
+      activarEventoYingYang();
+      codigoInput.value = '';
+      return;
+    }
+    // otros códigos -> dar 1.000.000 monedas + desbloquear personaje33
+    state.monedas += 1000000;
+    if(!state.exclusivasCompradas.includes('personaje33')){
+      state.exclusivasCompradas.push('personaje33'); // aparecerá en "personajes exclusivos"
+    }
+    if(!state.personajesComprados.includes('personaje33')){
+      state.personajesComprados.push('personaje33'); // añadir también a tus personajes (opcional)
+    }
+    actualizarMonedasDOM();
+    actualizarPanelBase();
+    guardarState();
+    audioCompra.play().catch(()=>{});
+    codigoInput.value = '';
+  });
+
+  // --- Evento Ying Yang (animación, fondo y skins neon) ---
+  function activarEventoYingYang(){
+    if(eventoActivo) return;
+    eventoActivo = true;
+    mostrarMensaje('¡Evento Ying Yang iniciado! ⚡');
+    // mostrar fondo evento
+    fondoEvento.style.display = 'block';
+    contadorEvento.style.display = 'block';
+    let t = 60 * 10 / 10; // Si el usuario quería 10 minutos, pon 600s; el usuario pidió 10s for animation and 10min for duration earlier.
+    // We'll implement: animation (10s) then event active period 10 minutes (600s).
+    // First: special animation 10s
+    // show immediate 10s animation of neon flashes (we simulate by toggling body filters)
+    document.body.style.transition = 'filter 0.3s';
+    document.body.style.filter = 'contrast(1.4) saturate(1.2)';
+
+    // 10s fancy animation
+    let animT = 10;
+    const animInterval = setInterval(()=>{
+      animT--;
+      if(animT<=0){
+        clearInterval(animInterval);
+        // after the 10s animation, the event duration starts (10 minutes)
+        document.body.style.filter = '';
+        startEventDuration(600); // 600s = 10 minutes
+      } else {
+        // optional: create moving lights while animating
+        // we could spawn ephemeral neon blobs here; keep simple
+      }
+    },1000);
+  }
+
+  function startEventDuration(seconds){
+    // Set marker
+    eventoActivo = true;
+    // Show neon for all current skins in carousel and in list
+    // Also purchase during event will get neon permanence
+    // Show event background and counter
+    fondoEvento.style.display = 'block';
+    contadorEvento.style.display = 'block';
+    let remaining = seconds;
+    const idInterval = setInterval(()=>{
+      contadorEvento.textContent = `Evento: ${formatTime(remaining)}`;
+      remaining--;
+      if(remaining < 0){
+        clearInterval(idInterval);
+        eventoActivo = false;
+        fondoEvento.style.display = 'none';
+        contadorEvento.style.display = 'none';
+        mostrarMensaje('¡Evento terminado! ✨');
+      }
+    },1000);
+  }
+
+  function formatTime(sec){
+    const h = Math.floor(sec/3600);
+    const m = Math.floor((sec%3600)/60);
+    const s = sec%60;
+    if(h>0) return `${h}h ${m}m ${s}s`;
+    if(m>0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
+  // --- Skins carousel (muestra personajes en el centro) ---
+  const allSkins = Object.keys(personajes);
+  let skinIndex = 0;
+  function showSkin(idx){
+    if(idx < 0) idx = allSkins.length - 1;
+    if(idx >= allSkins.length) idx = 0;
+    skinIndex = idx;
+    const id = allSkins[skinIndex];
+    skinImg.src = `${id}.png`;
+    skinName.textContent = id;
+    // set buy button text + availability
+    const p = personajes[id];
+    if(p.precio === 'todo') skinBuyBtn.textContent = 'Comprar (todo tu dinero)';
+    else if(p.precio === 'todo-minimo') skinBuyBtn.textContent = `Comprar (min ${Number(p.minimo).toLocaleString()})`;
+    else if(p.precioStr) skinBuyBtn.textContent = 'Precio especial (no comprable)';
+    else skinBuyBtn.textContent = `Comprar (${Number(p.precio||0).toLocaleString()})`;
+
+    // neon style if purchased during event permanently
+    if(state.skinsNeon[id]) skinImg.style.filter = 'grayscale(0%) drop-shadow(0 0 12px #0ff)';
+    else skinImg.style.filter = '';
+
+    // disable if already owned
+    if(state.personajesComprados.includes(id) || state.exclusivasCompradas.includes(id)){
+      skinBuyBtn.textContent = 'Comprado';
+      skinBuyBtn.disabled = true;
+      skinBuyBtn.style.opacity = 0.7;
+    } else {
+      skinBuyBtn.disabled = false;
+      skinBuyBtn.style.opacity = 1;
+    }
+  }
+  showSkin(0);
+
+  document.getElementById('skins-prev').addEventListener('click', ()=> { showSkin(skinIndex-1); });
+  document.getElementById('skins-next').addEventListener('click', ()=> { showSkin(skinIndex+1); });
+
+  // Comprar desde carousel
+  skinBuyBtn.addEventListener('click', ()=>{
+    const id = allSkins[skinIndex];
+    const p = personajes[id];
+    if(!p) return;
+    if(p.precioStr){ mostrarMensaje('Este skin tiene precio especial, no comprable con monedas.'); return; }
+    if(p.precio === 'todo'){
+      if(state.monedas <= 0) return mostrarMensaje('No tienes monedas ❌');
+      if(state.personajesComprados.length >= state.plazas) return mostrarMensaje('No hay huecos ⚠️');
+      // consume all
+      state.personajesComprados.push(id);
+      if(eventoActivo) state.skinsNeon[id] = true;
+      state.monedas = 0;
+      recalcularProduccion();
+      actualizarPanelBase();
+      actualizarMonedasDOM();
+      guardarState();
+      audioCompra.play().catch(()=>{});
+      mostrarMensaje('¡Comprado con TODO tu dinero! ✅');
+      showSkin(skinIndex);
+      return;
+    }
+    if(p.precio === 'todo-minimo'){
+      if(state.monedas < p.minimo) return mostrarMensaje('No tienes el mínimo requerido ❌');
+      state.monedas = 0;
+      const boost = 9999999999;
+      state.produccionTotal += boost;
+      actualizarMonedasDOM();
+      guardarState();
+      mostrarMensaje('Poder por 10s activo ⚡');
+      audioCompra.play().catch(()=>{});
+      setTimeout(()=>{ state.produccionTotal -= boost; guardarState(); mostrarMensaje('Se acabó el poder infinito'); }, 10000);
+      return;
+    }
+    const precio = Number(p.precio || 0);
+    if(state.monedas >= precio){
+      state.monedas -= precio;
+      state.personajesComprados.push(id);
+      // if event active, permanent neon
+      if(eventoActivo) state.skinsNeon[id] = true;
+      recalcularProduccion();
+      actualizarPanelBase();
+      actualizarMonedasDOM();
+      guardarState();
+      audioCompra.play().catch(()=>{});
+      mostrarMensaje('Skin comprada ✅');
+      showSkin(skinIndex);
+    } else {
+      mostrarMensaje('No tienes monedas suficientes ❌');
+      audioFallo.play().catch(()=>{});
+    }
+  });
+
+  // Auto-rotar skins cada 6s
+  setInterval(()=> { showSkin(skinIndex+1); }, 6000);
+
+  // --- personaje grande modal close ---
+  cerrarPersonajeGrande.addEventListener('click', ()=> personajeGrandeModal.style.display = 'none');
+
+  // --- Musica on/off (funciona) ---
+  let musicaActiva = !!state.musicaActiva;
+  function actualizarIconoMusica(){
+    musicaIcono.src = musicaActiva ? 'musica_on.png' : 'musica_off.png';
+  }
+  musicaIcono.addEventListener('click', ()=>{
+    musicaActiva = !musicaActiva;
+    state.musicaActiva = musicaActiva;
+    if(musicaActiva){
+      audioMusica.play().catch(()=>{});
+    } else {
+      audioMusica.pause();
+    }
+    actualizarIconoMusica();
+    guardarState();
+  });
+  // aplicar estado guardado
+  if(state.musicaActiva) audioMusica.play().catch(()=>{});
+  actualizarMonedasDOM();
+  recalcularProduccion();
+  actualizarPanelBase();
+  actualizarPanelExclusivas();
+  actualizarIconoMusica();
+
+  // --- Guardado periódico ---
+  setInterval(()=> guardarState(), 5000);
+
+  // --- Inicial fill: si basesExternas vacias generar personajes iniciales ---
+  function seedBases(){
+    basesExternas.forEach(base=>{
+      if(base.personajes.length === 0){
+        const keys = Object.keys(personajes);
+        // fill with 4-7 initial
+        const cnt = 4 + Math.floor(Math.random()*4);
+        for(let i=0;i<cnt;i++){
+          const p = keys[Math.floor(Math.random()*keys.length)];
+          base.personajes.push(p);
+        }
+      }
+    });
+  }
+  seedBases();
+
+  // Expose some debugging (opcional)
+  window._stealState = state;
+  window._basesExternas = basesExternas;
+
+}); // DOMContentLoaded end
+</script>
+</body>
+</html>
